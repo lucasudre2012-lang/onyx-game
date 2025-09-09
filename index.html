@@ -1,17 +1,39 @@
 <!DOCTYPE html>
 <html lang="fr">
 <head>
-  <meta charset="utf-8">
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>Mes Jeux HTML</title>
-  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <link rel="stylesheet" href="styles.css" />
 </head>
 <body>
-  <h1>🎮 Mes Jeux HTML</h1>
-  <p>Choisissez un jeu :</p>
-  <ul>
-    <li><a href="games/laser dodge .html">Laser Dodge 9x9</a></li>
-    <li><a href="games/LIGHT CYCLES.html">Light Cycles (Tron)</a></li>
-    <li><a href="games/road cube.html">Road Cube</a></li>
-  </ul>
+  <header class="site-header">
+    <h1>🎮 Mes Jeux HTML</h1>
+    <div class="actions">
+      <input id="search" type="search" placeholder="Rechercher un jeu…" />
+      <select id="filter">
+        <option value="all">Tous les genres</option>
+      </select>
+    </div>
+  </header>
+
+  <main>
+    <div id="grid" class="grid"></div>
+  </main>
+
+  <dialog id="player" class="player-modal">
+    <div class="player-bar">
+      <button id="closeBtn" aria-label="Fermer">✕</button>
+      <div class="player-title" id="playerTitle"></div>
+      <a id="openNewTab" class="open-btn" target="_blank" rel="noopener">Ouvrir dans un onglet ↗</a>
+    </div>
+    <iframe id="frame" title="Game frame" loading="lazy"></iframe>
+  </dialog>
+
+  <footer class="site-footer">
+    <p>Astuce : ajoute des images dans <code>assets/</code> et référence-les dans <code>manifest.json</code> (clé <code>cover</code>).</p>
+  </footer>
+
+  <script src="script.js"></script>
 </body>
 </html>
