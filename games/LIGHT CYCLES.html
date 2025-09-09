@@ -1,0 +1,420 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Light Cycles — mini-jeu (inspiré Tron)</title>
+<style>
+  :root{--bg:#0b0e13;--panel:#121621;--text:#e9eef5;--muted:#9aa3b2;--accent:#6ee7ff;--ok:#7cff88;--warn:#ffd86b;--bad:#ff7b7b}
+  *{box-sizing:border-box}
+  html,body{height:100%}
+  body{margin:0;background:radial-gradient(1200px 700px at 50% -200px,#111a,#0000),var(--bg);color:var(--text);font-family:ui-sans-serif,system-ui,Segoe UI,Roboto,Ubuntu,Arial}
+  #wrap{height:100%;display:grid;grid-template-rows:auto 1fr}
+  header{display:flex;align-items:center;gap:.75rem;padding:.6rem 1rem;background:linear-gradient(180deg,#0f1420,#0b0e13);border-bottom:1px solid #000}
+  header h1{margin:0;font-size:1rem;letter-spacing:.2px;font-weight:600;color:var(--accent)}
+  header .hint{margin-left:auto;font-size:.9rem;color:var(--muted)}
+  #game{position:relative;isolation:isolate}
+  canvas{display:block;width:100%;height:100%;background:linear-gradient(180deg,#0a0c12,#090b10)}
+  #hud{position:absolute;inset:0;pointer-events:none}
+  .badge{position:absolute;left:1rem;top:1rem;background:#0009;border:1px solid #fff1;padding:.25rem .6rem;border-radius:.6rem;font-size:.9rem}
+  .badge span{opacity:.9}
+  .topright{right:1rem;left:auto}
+  .overlay{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;background:linear-gradient(180deg,#000a,#0007);backdrop-filter:blur(3px)}
+  .panel{pointer-events:auto;width:min(720px,92vw);background:linear-gradient(180deg,#121725,#0d111b);border:1px solid #fff2;border-radius:16px;box-shadow:0 10px 40px #000c;padding:1rem}
+  .panel h2{margin:.2rem 0 0;font-weight:700;letter-spacing:.2px;font-size:1.2rem;color:#d7f7ff}
+  .panel p{margin:.5rem 0;color:#cbd5e1}
+  .grid{display:grid;grid-template-columns:1fr 1fr;gap:.75rem;margin:.75rem 0}
+  .row{display:flex;gap:.5rem;align-items:center}
+  .row label{min-width:9.5rem;color:#c6d0e0}
+  input[type="range"]{width:100%}
+  input[type="number"],select{background:#0a0f1a;color:#dbe5f6;border:1px solid #2a3242;border-radius:.6rem;padding:.35rem .5rem}
+  button{background:linear-gradient(180deg,#1f2637,#161c2a);color:#eaf3ff;border:1px solid #2f3b56;border-radius:12px;padding:.7rem 1rem;font-weight:600;cursor:pointer;transition:.2s transform,.2s box-shadow;box-shadow:0 6px 16px #0005}
+  button:hover{transform:translateY(-1px)}
+  .row .colorchip{width:22px;height:22px;border-radius:6px;border:1px solid #fff3}
+  .row .thumb{width:34px;height:34px;border-radius:6px;border:1px solid #fff3;background:#0a0f1a center/cover no-repeat}
+  .footer{display:flex;justify-content:space-between;align-items:center;margin-top:.5rem}
+  .kbd{display:inline-flex;align-items:center;gap:.25rem;background:#0009;border:1px solid #fff2;border-radius:.5rem;padding:.2rem .4rem;font-size:.85rem}
+  .win{color:var(--ok)}.lose{color:var(--bad)}
+</style>
+</head>
+<body>
+<div id="wrap">
+  <header>
+    <h1>Light Cycles — mini-jeu</h1>
+    <div class="hint">Contrôles: <span class="kbd">ZQSD</span> / <span class="kbd">WASD</span> / <span class="kbd">←↑→↓</span> · <span class="kbd">P</span> pause · <span class="kbd">R</span> rejouer</div>
+  </header>
+  <div id="game">
+    <canvas id="c"></canvas>
+    <div id="hud">
+      <div class="badge" id="status"><span>Round <b id="round">1</b> · Vivants: <b id="alive">—</b></span></div>
+      <div class="badge topright" id="score">Victoires — Vous: <b id="youWins">0</b> · Bots: <b id="botWins">0</b></div>
+      <div class="overlay" id="menu">
+        <div class="panel">
+          <h2>Mini-jeu Light Cycles (inspiré Tron)</h2>
+          <p>Évitez les murs et les traînées lumineuses. Toute collision = élimination. Dernier en vie gagne le round.</p>
+          <div class="grid">
+            <div class="row"><label>Nombre de bots</label><input id="bots" type="number" min="1" max="12" value="5"></div>
+            <div class="row"><label>Vitesse</label><input id="speed" type="range" min="6" max="20" value="12"><span id="speedLbl">12 t/s</span></div>
+            <div class="row"><label>Taille de la grille</label>
+              <select id="grid">
+                <option value="56x32">Moyen (56×32)</option>
+                <option value="64x36" selected>Grand (64×36)</option>
+                <option value="80x44">XL (80×44)</option>
+              </select>
+            </div>
+            <div class="row"><label>Couleur joueur</label>
+              <select id="playerColor">
+                <option value="#6ee7ff">Bleu néon</option>
+                <option value="#ff9f5a">Orange</option>
+                <option value="#7cff88" selected>Vert</option>
+                <option value="#c084fc">Violet</option>
+                <option value="#f472b6">Rose</option>
+              </select>
+              <div class="colorchip" id="chip"></div>
+            </div>
+            <div class="row"><label>Image joueur (PNG)</label>
+              <input id="playerImgFile" type="file" accept="image/png,image/*">
+              <div class="thumb" id="imgPreview"></div>
+            </div>
+            <div class="row"><label>Taille de l'image</label>
+              <input id="imgScale" type="range" min="50" max="140" value="100"><span id="imgScaleLbl">100%</span>
+            </div>
+          </div>
+          <div class="footer">
+            <div class="hint">Astuce: rester en mouvement et anticipez l’espace libre. Les bots évitent les impasses, mais on peut les piéger.</div>
+            <button id="start">Jouer</button>
+          </div>
+        </div>
+      </div>
+      <div class="overlay" id="over" style="display:none">
+        <div class="panel" style="text-align:center">
+          <h2 id="overTitle">Round terminé</h2>
+          <p id="overMsg">—</p>
+          <div style="display:flex;gap:.5rem;justify-content:center;margin-top:.5rem">
+            <button id="again">Rejouer</button>
+            <button id="cont">Round suivant</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+<script>
+(() => {
+  const canvas = document.getElementById('c');
+  const ctx = canvas.getContext('2d');
+  const statusEl = document.getElementById('status');
+  const roundEl = document.getElementById('round');
+  const aliveEl = document.getElementById('alive');
+  const youWinsEl = document.getElementById('youWins');
+  const botWinsEl = document.getElementById('botWins');
+  const menu = document.getElementById('menu');
+  const startBtn = document.getElementById('start');
+  const botsInput = document.getElementById('bots');
+  const speedInput = document.getElementById('speed');
+  const speedLbl = document.getElementById('speedLbl');
+  const gridSel = document.getElementById('grid');
+  const colorSel = document.getElementById('playerColor');
+  const chip = document.getElementById('chip');
+  const imgFile = document.getElementById('playerImgFile');
+  const imgPreview = document.getElementById('imgPreview');
+  const imgScaleInput = document.getElementById('imgScale');
+  const imgScaleLbl = document.getElementById('imgScaleLbl');
+  const over = document.getElementById('over');
+  const overTitle = document.getElementById('overTitle');
+  const overMsg = document.getElementById('overMsg');
+  const again = document.getElementById('again');
+  const cont = document.getElementById('cont');
+
+  chip.style.background = colorSel.value;
+  colorSel.addEventListener('change', () => chip.style.background = colorSel.value);
+  speedInput.addEventListener('input', () => speedLbl.textContent = `${speedInput.value} t/s`);
+
+  const DIRS = [[0,-1],[1,0],[0,1],[-1,0]];
+  const OPP = [2,3,0,1];
+  const COLORS = ['#6ee7ff','#ff9f5a','#7cff88','#c084fc','#f472b6','#ffd86b','#7bb3ff','#ff7bb3','#a3f7bf','#f7a3bf'];
+  const PLAYER_ID = 1;
+
+  let GRID_W = 64, GRID_H = 36;
+  let cell = 16, pxW = 0, pxH = 0;
+  let grid = new Uint16Array(1);
+  let cycles = [];
+  let tickRate = 12;
+  let acc = 0, last = 0, running = false, paused = false;
+  let round = 1, youWins = 0, botWins = 0;
+  let playerImg = null;
+  let imgScale = 1;
+
+  function makeCycle(id,x,y,dir,color,isPlayer=false){
+    return {id,x,y,dir,color,alive:true,isPlayer,nextDir:dir,decidedDir:dir};
+  }
+  function idx(x,y){return y*GRID_W+x}
+  function inBounds(x,y){return x>=0&&x<GRID_W&&y>=0&&y<GRID_H}
+
+  function resizeCanvas(){
+    const dpr = Math.max(1, window.devicePixelRatio||1);
+    const host = document.getElementById('game');
+    const w = host.clientWidth, h = host.clientHeight;
+    cell = Math.max(4, Math.floor(Math.min(w/GRID_W, h/GRID_H)));
+    pxW = cell*GRID_W; pxH = cell*GRID_H;
+    canvas.width = Math.floor(pxW*dpr);
+    canvas.height = Math.floor(pxH*dpr);
+    canvas.style.width = pxW+'px';
+    canvas.style.height = pxH+'px';
+    ctx.setTransform(dpr,0,0,dpr,0,0);
+    draw();
+  }
+  window.addEventListener('resize', resizeCanvas);
+
+  window.addEventListener('keydown', e => {
+    if (e.key === 'p' || e.key === 'P') togglePause();
+    if (e.key === 'r' || e.key === 'R') restartRound(true);
+    const p = cycles.find(c=>c.isPlayer && c.alive);
+    if (!p) return;
+    const k = e.key.toLowerCase();
+    let want = p.dir;
+    if (k==='arrowup'||k==='w'||k==='z') want = 0;
+    else if (k==='arrowright'||k==='d') want = 1;
+    else if (k==='arrowdown'||k==='s') want = 2;
+    else if (k==='arrowleft'||k==='a'||k==='q') want = 3;
+    if (want!==undefined && want!==OPP[p.dir]) p.nextDir = want;
+  });
+
+  function togglePause(){ if(!running) return; paused=!paused; statusFlash(paused?'⏸️ Pause':'▶️ Reprise'); }
+  function statusFlash(text){ statusEl.querySelector('span').innerHTML = `${text}`; setTimeout(()=>updateStatus(),700); }
+
+  function setGridFromSelect(){
+    const [gw,gh] = gridSel.value.split('x').map(Number);
+    GRID_W = gw; GRID_H = gh;
+  }
+  function clearGrid(){ grid = new Uint16Array(GRID_W*GRID_H); }
+  function rng(min,max){ return Math.random()*(max-min)+min; }
+
+  function spawnCycles(numBots, playerColor){
+    cycles = [];
+    const colors = [playerColor,...COLORS.filter(c=>c!==playerColor)];
+    const slots = [];
+    const margin = 4;
+    const perim = [
+      {x:margin,y:Math.floor(GRID_H*0.25),dir:1},
+      {x:GRID_W-margin-1,y:Math.floor(GRID_H*0.75),dir:3},
+      {x:Math.floor(GRID_W*0.25),y:GRID_H-margin-1,dir:0},
+      {x:Math.floor(GRID_W*0.75),y:margin,dir:2},
+      {x:margin,y:Math.floor(GRID_H*0.75),dir:1},
+      {x:GRID_W-margin-1,y:Math.floor(GRID_H*0.25),dir:3},
+      {x:Math.floor(GRID_W*0.75),y:GRID_H-margin-1,dir:0},
+      {x:Math.floor(GRID_W*0.25),y:margin,dir:2}
+    ];
+    for (let i=0;i<perim.length;i++) slots.push(perim[i]);
+    const s0 = slots.shift();
+    cycles.push(makeCycle(PLAYER_ID, s0.x, s0.y, s0.dir, colors[0], true));
+    for (let i=0;i<numBots;i++){
+      const s = slots[i%slots.length];
+      const c = colors[(i+1)%colors.length];
+      cycles.push(makeCycle(i+2, s.x, s.y, s.dir, c, false));
+    }
+  }
+
+  function updateStatus(){
+    aliveEl.textContent = cycles.filter(c=>c.alive).length;
+    roundEl.textContent = String(round);
+  }
+
+  function drawGridBase(){
+    ctx.clearRect(0,0,pxW,pxH);
+    ctx.globalAlpha = 0.06;
+    ctx.beginPath();
+    for(let x=0;x<=GRID_W;x++){ ctx.moveTo(x*cell+0.5,0.5); ctx.lineTo(x*cell+0.5,pxH+0.5); }
+    for(let y=0;y<=GRID_H;y++){ ctx.moveTo(0.5,y*cell+0.5); ctx.lineTo(pxW+0.5,y*cell+0.5); }
+    ctx.strokeStyle = '#9fb5ff';
+    ctx.stroke();
+    ctx.globalAlpha = 1;
+  }
+
+  function draw(){
+    drawGridBase();
+    for(let y=0;y<GRID_H;y++){
+      for(let x=0;x<GRID_W;x++){
+        const v = grid[idx(x,y)];
+        if (v!==0){
+          const col = trailColorById(v);
+          if (v===PLAYER_ID){
+            ctx.save();
+            ctx.fillStyle = col;
+            ctx.fillRect(x*cell+0.5,y*cell+0.5,cell-1,cell-1);
+            ctx.globalAlpha = 0.9;
+            ctx.lineWidth = 1;
+            ctx.strokeStyle = '#ffffff';
+            ctx.strokeRect(x*cell+0.5,y*cell+0.5,cell-1,cell-1);
+            ctx.restore();
+            ctx.globalAlpha = 1;
+          } else {
+            ctx.fillStyle = col;
+            ctx.fillRect(x*cell+2,y*cell+2,cell-4,cell-4);
+          }
+        }
+      }
+    }
+    for(const c of cycles){
+      if (!c.alive) continue;
+      ctx.fillStyle = c.color;
+      ctx.fillRect(c.x*cell+2,c.y*cell+2,cell-4,cell-4);
+      ctx.globalAlpha = 0.35;
+      ctx.fillRect(c.x*cell+0.5,c.y*cell+0.5,cell-1,cell-1);
+      ctx.globalAlpha = 1;
+      if (c.isPlayer){
+        const size = Math.max(8, Math.floor((cell-2)*imgScale));
+        if (playerImg){
+          const x = c.x*cell + Math.floor((cell - size)/2);
+          const y = c.y*cell + Math.floor((cell - size)/2);
+          try{ ctx.drawImage(playerImg,x,y,size,size); }catch(_){ }
+          ctx.lineWidth = 1;
+          ctx.strokeStyle = '#ffffff';
+          ctx.strokeRect(x,y,size,size);
+        }
+        ctx.lineWidth = 2;
+        ctx.strokeStyle = '#ffffff';
+        ctx.strokeRect(c.x*cell+1.5,c.y*cell+1.5,cell-3,cell-3);
+      }
+    }
+  }
+
+  function trailColorById(id){
+    const c = cycles.find(k=>k.id===id);
+    return c?c.color:'#3aa7ff';
+  }
+
+  function aiChooseDir(c){
+    const options = [c.dir,(c.dir+3)%4,(c.dir+1)%4];
+    let best = c.dir, bestScore = -1;
+    for (const d of options){
+      if (d===OPP[c.dir]) continue;
+      const sc = scoreDir(c.x,c.y,d,18);
+      if (sc>bestScore+0.01){ bestScore=sc; best=d; }
+    }
+    if (Math.random()<0.05){ best = options[Math.floor(rng(0,options.length))]; }
+    return best;
+  }
+
+  function scoreDir(x,y,dir,look){
+    const [dx,dy] = DIRS[dir];
+    let cx=x, cy=y, cnt=0;
+    for(let i=0;i<look;i++){
+      cx+=dx; cy+=dy;
+      if (!inBounds(cx,cy) || grid[idx(cx,cy)]!==0) break;
+      cnt++;
+      const left=(dir+3)%4, right=(dir+1)%4;
+      const [lx,ly]=DIRS[left];
+      const [rx,ry]=DIRS[right];
+      if (inBounds(cx+lx,cy+ly) && grid[idx(cx+lx,cy+ly)]===0) cnt+=.2;
+      if (inBounds(cx+rx,cy+ry) && grid[idx(cx+rx,cy+ry)]===0) cnt+=.2;
+    }
+    return cnt;
+  }
+
+  function step(){
+    for(const c of cycles){ if (c.alive){ grid[idx(c.x,c.y)] = c.id; } }
+    for(const c of cycles){
+      if (!c.alive) continue;
+      if (c.isPlayer){ c.decidedDir = (c.nextDir!==OPP[c.dir]) ? c.nextDir : c.dir; }
+      else { c.decidedDir = aiChooseDir(c); }
+    }
+    const nexts = new Map();
+    const cellToCycles = new Map();
+    for(const c of cycles){
+      if (!c.alive) continue;
+      const d = c.decidedDir;
+      const [dx,dy] = DIRS[d];
+      const nx = c.x+dx, ny = c.y+dy;
+      nexts.set(c,{x:nx,y:ny,dir:d});
+      const k = nx+','+ny;
+      if (!cellToCycles.has(k)) cellToCycles.set(k,[]);
+      cellToCycles.get(k).push(c);
+    }
+    const toDie = new Set();
+    for(const [c,{x:nx,y:ny}] of nexts){
+      if (!inBounds(nx,ny)) { toDie.add(c); continue; }
+      const tile = grid[idx(nx,ny)];
+      if (tile!==0){ toDie.add(c); continue; }
+    }
+    for(const [_,list] of cellToCycles){ if (list.length>1){ list.forEach(c=>toDie.add(c)); } }
+    for(const c of cycles){
+      if (!c.alive) continue;
+      if (toDie.has(c)){ c.alive=false; continue; }
+      const n = nexts.get(c);
+      c.x=n.x; c.y=n.y; c.dir=n.dir;
+    }
+    draw();
+    const alive = cycles.filter(c=>c.alive);
+    aliveEl.textContent = alive.length;
+    if (alive.length<=1){ endRound(alive[0]||null); }
+  }
+
+  function endRound(winner){
+    running = false;
+    over.style.display = '';
+    if (!winner){
+      overTitle.textContent = 'Égalité';
+      overMsg.innerHTML = 'Tout le monde s\'est percuté.';
+    } else if (winner.isPlayer){
+      youWins++; youWinsEl.textContent = youWins;
+      overTitle.textContent = 'Vous gagnez ce round !';
+      overMsg.innerHTML = 'Beau piège.';
+    } else {
+      botWins++; botWinsEl.textContent = botWins;
+      overTitle.textContent = 'Perdu';
+      overMsg.innerHTML = 'Un bot a survécu plus longtemps.';
+    }
+  }
+
+  function loop(t){
+    if (!running){ last=t; requestAnimationFrame(loop); return; }
+    const dt = (t-last)/1000; last=t;
+    if (!paused){
+      acc+=dt;
+      const stepTime = 1/tickRate;
+      while(acc>=stepTime){ step(); acc-=stepTime; }
+    }
+    requestAnimationFrame(loop);
+  }
+
+  function startGame(){
+    menu.style.display = 'none'; over.style.display='none';
+    setGridFromSelect(); clearGrid();
+    tickRate = Number(speedInput.value);
+    spawnCycles(Number(botsInput.value), colorSel.value);
+    resizeCanvas();
+    running = true; paused=false; acc=0; last=performance.now();
+    updateStatus();
+  }
+
+  function restartRound(fromKey){
+    if (!running && over.style.display==='none' && !fromKey) return;
+    round = 1; youWins=0; botWins=0; youWinsEl.textContent='0'; botWinsEl.textContent='0';
+    startGame();
+  }
+
+  again.addEventListener('click', () => { round=1; youWins=botWins=0; youWinsEl.textContent='0'; botWinsEl.textContent='0'; startGame(); });
+  cont.addEventListener('click', () => { round++; startGame(); });
+  startBtn.addEventListener('click', startGame);
+
+  if (imgScaleInput){ imgScaleInput.addEventListener('input', ()=>{ imgScale = Number(imgScaleInput.value)/100; imgScaleLbl.textContent = imgScaleInput.value+"%"; }); }
+  if (imgFile){ imgFile.addEventListener('change', e=>{
+    const f = e.target.files && e.target.files[0];
+    if (!f) return;
+    const url = URL.createObjectURL(f);
+    const img = new Image();
+    img.onload = ()=>{
+      try{ if (playerImg && playerImg.src && playerImg.src.startsWith('blob:')) URL.revokeObjectURL(playerImg.src); }catch(_){ }
+      playerImg = img;
+      imgPreview.style.backgroundImage = `url('${url}')`;
+    };
+    img.src = url;
+  }); }
+
+  resizeCanvas();
+  requestAnimationFrame(loop);
+})();
+</script>
+</body>
+</html>

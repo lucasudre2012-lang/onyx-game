@@ -1,0 +1,31 @@
+[
+  {
+    "title": "Laser Dodge 9x9",
+    "slug": "laser-dodge",
+    "file": "laser dodge .html",
+    "description": "Évite les lasers sur une grille 9x9 avec murs et vitesse croissante.",
+    "genres": [
+      "Arcade",
+      "Réflexes"
+    ]
+  },
+  {
+    "title": "Light Cycles (Tron)",
+    "slug": "light-cycles",
+    "file": "LIGHT CYCLES.html",
+    "description": "Affronte les bots et évite les traînées lumineuses.",
+    "genres": [
+      "Arcade"
+    ]
+  },
+  {
+    "title": "Road Cube",
+    "slug": "road-cube",
+    "file": "road cube.html",
+    "description": "Map procédurale, loot et survie face aux ennemis.",
+    "genres": [
+      "Action",
+      "Aventure"
+    ]
+  }
+]

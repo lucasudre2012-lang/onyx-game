@@ -1,0 +1,88 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no" />
+<title>Laser Dodge 9x9</title>
+<style>
+  :root{--bg:#0e0f12;--panel:#151924;--grid:#2a3140;--player:#7CFF88;--laser:#ff6b6b;--wall:#7782a8;--text:#e9eef5;--accent:#6ee7ff}
+  *{box-sizing:border-box}
+  html,body{height:100%}
+  body{margin:0;background:var(--bg);color:var(--text);font-family:system-ui,-apple-system,Segoe UI,Roboto,Ubuntu,Arial,sans-serif;display:flex;flex-direction:column}
+  header{padding:.6rem 1rem;background:linear-gradient(180deg,#0000,#0003);display:flex;gap:1rem;align-items:center;justify-content:space-between}
+  header h1{font-size:1rem;margin:0;color:var(--accent);letter-spacing:.5px}
+  #hud{display:flex;gap:1rem;align-items:center;font-variant-numeric:tabular-nums}
+  #hud span{background:#0005;border:1px solid #fff2;padding:.25rem .5rem;border-radius:.5rem}
+  #wrap{flex:1;display:grid;place-items:center;padding:8px}
+  canvas{background:radial-gradient(120% 120% at 50% 20%,#1b2231,#0f141d);border-radius:18px;box-shadow:0 10px 30px #0007;border:1px solid #ffffff18;touch-action:none}
+  #controls{display:grid;grid-template-columns:repeat(3,64px);grid-template-rows:repeat(3,64px);gap:8px;justify-content:center;align-content:center;margin:10px auto 16px auto;user-select:none}
+  #controls button{background:#111a;border:1px solid #fff2;border-radius:14px;color:#fff;padding:0;font-size:20px;width:64px;height:64px;box-shadow:inset 0 0 0 1px #0006}
+  #controls button:active{transform:scale(.98)}
+  #msg{position:fixed;inset:auto 0 14px 0;display:flex;justify-content:center;pointer-events:none}
+  .toast{pointer-events:auto;background:#111a;border:1px solid #fff2;border-radius:12px;padding:.6rem .8rem;box-shadow:0 8px 24px #0008}
+  .hidden{display:none}
+  @media (min-width:900px){#controls{margin-top:0}}
+</style>
+</head>
+<body>
+  <header>
+    <h1>Laser Dodge 9×9</h1>
+    <div id="hud">
+      <span>Score: <b id="score">0</b></span>
+      <span>Record: <b id="best">0</b></span>
+      <span>Vitesse: <b id="speed">1.0x</b></span>
+    </div>
+  </header>
+  <div id="wrap">
+    <canvas id="game" width="720" height="720" aria-label="Grille de jeu 9x9"></canvas>
+  </div>
+  <div id="controls" aria-label="Contrôles directionnels">
+    <span></span><button data-dir="up">▲</button><span></span>
+    <button data-dir="left">◀</button><span></span><button data-dir="right">▶</button>
+    <span></span><button data-dir="down">▼</button><span></span>
+  </div>
+  <div id="msg" class="hidden"><div class="toast" id="toast"></div></div>
+<script>
+(()=>{
+  const GRID=9,WALL_COUNT=12,BASE_SPAWN=1200,BASE_STEP=220,ACCEL_PER_SEC=0.045,MAX_SPEED_MULT=3.5,TOUCH_SWIPE_MIN=24;
+  const canvas=document.getElementById('game');
+  const ctx=canvas.getContext('2d');
+  const scoreEl=document.getElementById('score');
+  const bestEl=document.getElementById('best');
+  const speedEl=document.getElementById('speed');
+  const msgWrap=document.getElementById('msg');
+  const toast=document.getElementById('toast');
+  const css=getComputedStyle(document.documentElement);
+  const COLORS={player:css.getPropertyValue('--player')||'#7CFF88',laser:css.getPropertyValue('--laser')||'#ff6b6b',wall:css.getPropertyValue('--wall')||'#7782a8'};
+  const FIRE=['#fff2cc','#ffd166','#ffb703','#fb8500','#ff3b0a'];
+  const MAX_TRAIL=20;
+  let cell,player,walls,lasers,score,best,running,difficulty=1,lastTime=0,spawnTimer=0,stepTimer=0;
+  function resize(){const size=Math.min(window.innerWidth-16,window.innerHeight-160);const s=Math.max(360,Math.min(720,size));canvas.width=canvas.height=s|0;cell=canvas.width/GRID}
+  window.addEventListener('resize',resize);
+  function randInt(a,b){return(Math.random()*(b-a+1)+a)|0}
+  function choice(arr){return arr[(Math.random()*arr.length)|0]}
+  function posKey(p){return p.x+","+p.y}
+  function placeWalls(){const set=new Set();const forbidden=new Set([posKey({x:4,y:4}),posKey({x:4,y:5}),posKey({x:5,y:4}),posKey({x:3,y:4}),posKey({x:4,y:3})]);while(set.size<WALL_COUNT){const x=randInt(0,GRID-1),y=randInt(0,GRID-1);const k=x+","+y;if(!forbidden.has(k)&&!set.has(k))set.add(k)}return[...set].map(k=>{const [x,y]=k.split(',').map(Number);return{x,y}})}
+  function init(){player={x:4,y:4};walls=placeWalls();lasers=[];score=0;updateHUD();difficulty=1;spawnTimer=0;stepTimer=0;lastTime=0;running=true;hideToast()}
+  function updateHUD(){scoreEl.textContent=score;best=Number(localStorage.getItem('laser9_best')||0);if(score>best){best=score;localStorage.setItem('laser9_best',best)}bestEl.textContent=best;speedEl.textContent=(difficulty).toFixed(1)+"x"}
+  function spawnLaser(){const targetBias=Math.random()<0.7;const side=choice(['top','bottom','left','right']);let x,y,dx,dy;if(side==='top'){x=targetBias?player.x:randInt(0,GRID-1);y=-1;dx=0;dy=1}else if(side==='bottom'){x=targetBias?player.x:randInt(0,GRID-1);y=GRID;dx=0;dy=-1}else if(side==='left'){x=-1;y=targetBias?player.y:randInt(0,GRID-1);dx=1;dy=0}else{x=GRID;y=targetBias?player.y:randInt(0,GRID-1);dx=-1;dy=0}lasers.push({x,y,dx,dy,active:true,trail:[]})}
+  function blocked(nx,ny){return walls.some(w=>w.x===nx&&w.y===ny)}
+  function stepLasers(){for(const l of lasers){if(!l.active)continue;const nx=l.x+l.dx;const ny=l.y+l.dy;if(nx>=0&&nx<GRID&&ny>=0&&ny<GRID&&blocked(nx,ny)){l.active=false;score++;continue}l.x=nx;l.y=ny;l.trail.unshift({x:l.x,y:l.y});if(l.trail.length>MAX_TRAIL)l.trail.pop();if(l.x===player.x&&l.y===player.y){gameOver();return}if(l.x<-1||l.x>GRID||l.y<-1||l.y>GRID){l.active=false;score++}}lasers=lasers.filter(l=>l.active)}
+  function movePlayer(dx,dy){if(!running)return;const nx=Math.max(0,Math.min(GRID-1,player.x+dx));const ny=Math.max(0,Math.min(GRID-1,player.y+dy));if(walls.some(w=>w.x===nx&&w.y===ny))return;player.x=nx;player.y=ny;draw()}
+  function gameOver(){running=false;updateHUD();showToast(`Percuté par un laser ! Score: <b>${score}</b> — Touchez pour rejouer`)}
+  function showToast(html){toast.innerHTML=html;msgWrap.classList.remove('hidden')}
+  function hideToast(){msgWrap.classList.add('hidden')}
+  function draw(){ctx.clearRect(0,0,canvas.width,canvas.height);for(let y=0;y<GRID;y++){for(let x=0;x<GRID;x++){const px=x*cell,py=y*cell;ctx.fillStyle=((x+y)&1)?'#1c2432':'#19202d';ctx.fillRect(px,py,cell,cell);ctx.strokeStyle='rgba(255,255,255,0.06)';ctx.strokeRect(px+.5,py+.5,cell-1,cell-1)}}for(const w of walls){ctx.fillStyle=COLORS.wall;ctx.fillRect(w.x*cell+3,w.y*cell+3,cell-6,cell-6)}for(const l of lasers){ctx.save();ctx.globalCompositeOperation='lighter';for(let i=0;i<l.trail.length;i++){const p=l.trail[i];const tx=p.x*cell+cell/2;const ty=p.y*cell+cell/2;const a=0.8*(1-i/l.trail.length);ctx.globalAlpha=a;ctx.fillStyle=FIRE[Math.min(FIRE.length-1,(i*FIRE.length/l.trail.length)|0)];const r=Math.max(6,cell*0.2*(1-i/l.trail.length)+4);ctx.beginPath();ctx.arc(tx,ty,r,0,Math.PI*2);ctx.fill()}ctx.restore();const cx=l.x*cell+cell/2;const cy=l.y*cell+cell/2;ctx.fillStyle=COLORS.laser;ctx.beginPath();if(l.dx!==0){const y=Math.round(cy);ctx.rect(0,y-3,canvas.width,6)}else{const x=Math.round(cx);ctx.rect(x-3,0,6,canvas.height)}ctx.globalAlpha=.12;ctx.fill();ctx.globalAlpha=1;const r=Math.max(6,cell*.22);ctx.beginPath();ctx.arc(cx,cy,r,0,Math.PI*2);ctx.fill()}ctx.fillStyle=COLORS.player;const px=player.x*cell,py=player.y*cell;ctx.fillRect(px+6,py+6,cell-12,cell-12)}
+  function loop(ts){if(!running){draw();return}if(!lastTime)lastTime=ts;const dt=(ts-lastTime);lastTime=ts;difficulty=Math.min(MAX_SPEED_MULT,difficulty+(dt/1000)*ACCEL_PER_SEC);spawnTimer+=dt;const spawnDelay=BASE_SPAWN/difficulty;if(spawnTimer>=spawnDelay){spawnTimer=0;spawnLaser()}stepTimer+=dt;const stepDelay=BASE_STEP/difficulty;if(stepTimer>=stepDelay){stepTimer=0;stepLasers();updateHUD()}draw();requestAnimationFrame(loop)}
+  window.addEventListener('keydown',e=>{const k=e.key.toLowerCase();if(k==='arrowup'||k==='z')movePlayer(0,-1);else if(k==='arrowdown'||k==='s')movePlayer(0,1);else if(k==='arrowleft'||k==='q'||k==='a')movePlayer(-1,0);else if(k==='arrowright'||k==='d')movePlayer(1,0);else if(k===' '&&!running){init();requestAnimationFrame(loop)}});
+  document.querySelectorAll('#controls button').forEach(btn=>{btn.addEventListener('click',()=>{const dir=btn.dataset.dir;if(dir==='up')movePlayer(0,-1);if(dir==='down')movePlayer(0,1);if(dir==='left')movePlayer(-1,0);if(dir==='right')movePlayer(1,0)})});
+  let t0=null,t0x=0,t0y=0;canvas.addEventListener('touchstart',e=>{const t=e.changedTouches[0];t0=t.identifier;t0x=t.clientX;t0y=t.clientY},{passive:true});canvas.addEventListener('touchend',e=>{if(t0===null)return;const t=[...e.changedTouches].find(t=>t.identifier===t0);if(!t)return;const dx=t.clientX-t0x;const dy=t.clientY-t0y;const ax=Math.abs(dx),ay=Math.abs(dy);if(Math.max(ax,ay)>=TOUCH_SWIPE_MIN){if(ax>ay){movePlayer(dx>0?1:-1,0)}else{movePlayer(0,dy>0?1:-1)}}t0=null},{passive:true});
+  canvas.addEventListener('pointerdown',()=>{if(!running){init();requestAnimationFrame(loop)}});
+  msgWrap.addEventListener('click',()=>{if(!running){init();requestAnimationFrame(loop)}});
+  init();
+  resize();
+  requestAnimationFrame(loop);
+})();
+</script>
+</body>
+</html>
