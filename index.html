@@ -14,6 +14,7 @@
       <select id="filter">
         <option value="all">Tous les genres</option>
       </select>
+      <button id="suggestBtn" class="suggest">Proposer un jeu</button>
     </div>
   </header>
 
@@ -30,8 +31,32 @@
     <iframe id="frame" title="Game frame" loading="lazy"></iframe>
   </dialog>
 
+  <dialog id="suggestModal" class="suggest-modal">
+    <form method="dialog" class="panel">
+      <h2>Proposer un jeu</h2>
+      <p>Remplis ce formulaire pour demander l'ajout d'un jeu. Un e-mail sera préparé à <b>luca.sudre@outlook.com</b>.</p>
+      <label>Titre du jeu
+        <input id="s_title" type="text" placeholder="Ex: Super Puzzle" required />
+      </label>
+      <label>URL du jeu (HTML en ligne) ou lien de téléchargement
+        <input id="s_url" type="url" placeholder="https://..." required />
+      </label>
+      <label>Description courte
+        <textarea id="s_desc" rows="3" placeholder="Quelques lignes sur le jeu" required></textarea>
+      </label>
+      <label>Genres (séparés par des virgules)
+        <input id="s_genres" type="text" placeholder="Arcade, Action" />
+      </label>
+      <div class="row">
+        <button id="s_cancel" value="cancel" type="button">Annuler</button>
+        <button id="s_send" class="primary" type="submit">Préparer l'e-mail</button>
+      </div>
+      <p class="hint">Astuce : tu peux aussi écrire directement à <a href="mailto:luca.sudre@outlook.com">luca.sudre@outlook.com</a>.</p>
+    </form>
+  </dialog>
+
   <footer class="site-footer">
-    <p>Astuce : ajoute des images dans <code>assets/</code> et référence-les dans <code>manifest.json</code> (clé <code>cover</code>).</p>
+    <p>Ajoute des images de couverture dans <code>assets/</code> et référence-les par la clé <code>cover</code> dans <code>manifest.json</code>.</p>
   </footer>
 
   <script src="script.js"></script>

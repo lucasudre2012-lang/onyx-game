@@ -13,12 +13,17 @@ body{margin:0;background:radial-gradient(1200px 700px at 50% -200px,#0b1220,#0f1
   display:flex; align-items:center; gap:12px; justify-content:space-between;
 }
 .site-header h1{margin:0; font-size:20px; letter-spacing:.3px}
-.actions{display:flex; gap:8px; align-items:center}
+.actions{display:flex; gap:8px; align-items:center; flex-wrap:wrap}
 .actions input,.actions select{
   background:var(--card); color:var(--text); border:1px solid var(--outline);
   padding:10px 12px; border-radius:12px; outline:none;
 }
 .actions input{min-width:220px}
+.actions .suggest{
+  border:1px solid var(--accent);
+  background:linear-gradient(90deg,var(--accent), var(--accent2));
+  color:#0b0e13; font-weight:700; padding:10px 12px; border-radius:10px; cursor:pointer;
+}
 .grid{
   display:grid; gap:14px; padding:16px; grid-template-columns:repeat(auto-fill,minmax(220px,1fr));
 }
@@ -64,12 +69,30 @@ body{margin:0;background:radial-gradient(1200px 700px at 50% -200px,#0b1220,#0f1
   padding:6px 10px; border-radius:10px;
 }
 .player-bar button{
-  background:#121826; border:1px solid var(--outline); color:var(--text);
+  background:#121826; border:1px solid var(--outline); color:#var(--text);
   padding:6px 10px; border-radius:10px; cursor:pointer;
 }
 #frame{ width:100%; height:calc(100% - 48px); border:0; background:#000 }
-.site-footer{ padding:20px; text-align:center; color:var(--muted) }
+.site-footer{ padding:20px; text-align:center; color:#muted }
 @media (max-width:600px){
   .actions input{ min-width:140px }
   .site-header{ flex-wrap:wrap }
 }
+/* Suggest modal */
+.suggest-modal{
+  width:min(720px,96vw);
+  border:none; border-radius:16px; padding:0; overflow:hidden;
+  background:#0b0f16; color:#e6edf3;
+}
+.suggest-modal::backdrop{ background:#000a }
+.suggest-modal .panel{ padding:16px; }
+.suggest-modal h2{ margin:0 0 8px }
+.suggest-modal label{ display:block; margin:10px 0; }
+.suggest-modal input, .suggest-modal textarea{
+  width:100%; background:#121826; color:#dbe5f6; border:1px solid #2a3342;
+  border-radius:10px; padding:10px; font:inherit;
+}
+.suggest-modal .row{ display:flex; gap:8px; justify-content:flex-end; margin-top:10px }
+.suggest-modal button{ padding:10px 12px; border-radius:10px; border:1px solid #2a3342; background:#121826; color:#dbe5f6; cursor:pointer }
+.suggest-modal button.primary{ background:linear-gradient(90deg,var(--accent), var(--accent2)); color:#0b0e13; border:1px solid var(--accent) }
+.suggest-modal .hint{ color:#aab5c7; font-size:12px; margin-top:6px }

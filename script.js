@@ -7,6 +7,14 @@
   const title = document.getElementById('playerTitle');
   const closeBtn = document.getElementById('closeBtn');
   const openNewTab = document.getElementById('openNewTab');
+  const suggestBtn = document.getElementById('suggestBtn');
+  const suggestModal = document.getElementById('suggestModal');
+  const s_title = document.getElementById('s_title');
+  const s_url = document.getElementById('s_url');
+  const s_desc = document.getElementById('s_desc');
+  const s_genres = document.getElementById('s_genres');
+  const s_cancel = document.getElementById('s_cancel');
+  const s_send = document.getElementById('s_send');
 
   let manifest = [];
   try {
@@ -17,7 +25,6 @@
     return;
   }
 
-  // Remplir le filtre de genres
   const genres = Array.from(new Set(manifest.flatMap(g => g.genres || []))).sort();
   for(const g of genres){
     const opt = document.createElement('option');
@@ -81,6 +88,33 @@
 
   search.addEventListener('input', render);
   filter.addEventListener('change', render);
+
+  // Suggestion modal
+  suggestBtn.addEventListener('click', ()=>{
+    if(typeof suggestModal.showModal === 'function') suggestModal.showModal();
+    else suggestModal.setAttribute('open','');
+  });
+  s_cancel.addEventListener('click', ()=>{
+    if(typeof suggestModal.close === 'function') suggestModal.close();
+    else suggestModal.removeAttribute('open');
+  });
+  s_send.addEventListener('click', (e)=>{
+    const to = 'luca.sudre@outlook.com';
+    const subject = `Proposition de jeu : ${s_title.value || ''}`;
+    const body = [
+      `Titre : ${s_title.value || ''}`,
+      `URL : ${s_url.value || ''}`,
+      `Description : ${s_desc.value || ''}`,
+      `Genres : ${s_genres.value || ''}`,
+      '',
+      '— Envoyé depuis la galerie de jeux'
+    ].join('\n');
+    const href = `mailto:${encodeURIComponent(to)}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
+    if(typeof suggestModal.close === 'function') suggestModal.close();
+    else suggestModal.removeAttribute('open');
+    window.location.href = href;
+    e.preventDefault();
+  }, {passive:false});
 
   // Deep link ?game=slug
   const params = new URLSearchParams(location.search);
