@@ -47,6 +47,9 @@
       <label>Genres (séparés par des virgules)
         <input id="s_genres" type="text" placeholder="Arcade, Action" />
       </label>
+      <label>Pseudo (facultatif)
+        <input id="s_user" type="text" placeholder="Ton pseudo affiché sur la carte" />
+      </label>
       <div class="row">
         <button id="s_cancel" value="cancel" type="button">Annuler</button>
         <button id="s_send" class="primary" type="submit">Préparer l'e-mail</button>
@@ -56,7 +59,7 @@
   </dialog>
 
   <footer class="site-footer">
-    <p>Ajoute des images de couverture dans <code>assets/</code> et référence-les par la clé <code>cover</code> dans <code>manifest.json</code>.</p>
+    <p>Pour marquer un jeu de la communauté, ajoute la clé <code>"user": "Pseudo"</code> dans <code>manifest.json</code>.</p>
   </footer>
 
   <script src="script.js"></script>

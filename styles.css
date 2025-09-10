@@ -1,6 +1,7 @@
 :root{
   --bg:#0f1115; --panel:#171a21; --muted:#9aa4b2; --text:#e6edf3;
   --accent:#7dd3fc; --accent2:#a78bfa; --card:#1b2230; --outline:#2a3342;
+  --user:#8b5cf6;
 }
 *{box-sizing:border-box}
 html,body{height:100%}
@@ -32,6 +33,10 @@ body{margin:0;background:radial-gradient(1200px 700px at 50% -200px,#0b1220,#0f1
   border:1px solid var(--outline); border-radius:16px; overflow:hidden;
   box-shadow:0 2px 16px #0006; transition: transform .15s ease, box-shadow .15s ease;
 }
+.card.user-card{
+  border:2px solid var(--user);
+  box-shadow:0 3px 18px #0006, 0 0 0 2px rgba(139,92,246,.2);
+}
 .card:hover{ transform:translateY(-2px); box-shadow:0 6px 24px #0009 }
 .card-thumb{
   aspect-ratio:16/9; background: radial-gradient(120px 80px at 50% 40%, #203047, #0f141d);
@@ -52,11 +57,14 @@ body{margin:0;background:radial-gradient(1200px 700px at 50% -200px,#0b1220,#0f1
   background:linear-gradient(90deg,var(--accent), var(--accent2));
   color:#0b0e13; font-weight:700; padding:10px 12px; border-radius:10px; cursor:pointer;
 }
+.card .userline{ font-size:12px; color:var(--user); margin:2px 0 6px; display:flex; align-items:center; gap:6px }
+.card .userline .dot{ width:8px; height:8px; border-radius:999px; background:var(--user); box-shadow:0 0 12px var(--user) }
+/* Player */
 .player-modal{
   width: min(1200px, 96vw);
   height: min(860px, 86vh);
   border:none; border-radius:16px; padding:0; overflow:hidden;
-  background:#0b0f16; color:var(--text);
+  background:#0b0f16; color:#e6edf3;
 }
 .player-modal::backdrop{ background:#000a }
 .player-bar{
@@ -69,11 +77,11 @@ body{margin:0;background:radial-gradient(1200px 700px at 50% -200px,#0b1220,#0f1
   padding:6px 10px; border-radius:10px;
 }
 .player-bar button{
-  background:#121826; border:1px solid var(--outline); color:#var(--text);
+  background:#121826; border:1px solid var(--outline); color:#e6edf3;
   padding:6px 10px; border-radius:10px; cursor:pointer;
 }
 #frame{ width:100%; height:calc(100% - 48px); border:0; background:#000 }
-.site-footer{ padding:20px; text-align:center; color:#muted }
+.site-footer{ padding:20px; text-align:center; color:#9aa4b2 }
 @media (max-width:600px){
   .actions input{ min-width:140px }
   .site-header{ flex-wrap:wrap }

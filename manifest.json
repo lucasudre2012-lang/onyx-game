@@ -27,5 +27,15 @@
       "Action",
       "Aventure"
     ]
+  },
+  {
+    "title": "Super Puzzle (exemple)",
+    "slug": "super-puzzle",
+    "file": "super-puzzle.html",
+    "description": "Exemple de jeu proposé par la communauté.",
+    "genres": [
+      "Puzzle"
+    ],
+    "user": "ExempleUser"
   }
 ]

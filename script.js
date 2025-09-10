@@ -15,6 +15,7 @@
   const s_genres = document.getElementById('s_genres');
   const s_cancel = document.getElementById('s_cancel');
   const s_send = document.getElementById('s_send');
+  const s_user = document.getElementById('s_user');
 
   let manifest = [];
   try {
@@ -46,13 +47,15 @@
       return;
     }
     for(const m of items){
+      const isUser = !!m.user;
       const card = document.createElement('article');
-      card.className = 'card';
+      card.className = 'card' + (isUser ? ' user-card' : '');
       const thumb = m.cover ? `<img alt="" src="${m.cover}">` : `${m.title}`;
       card.innerHTML = `
         <div class="card-thumb">${thumb}</div>
         <div class="card-body">
           <h3>${m.title}</h3>
+          ${isUser ? `<div class="userline"><span class="dot"></span><span>Ajouté par ${m.user}</span></div>` : ''}
           <p>${m.description || ''}</p>
           <div class="tags">${(m.genres||[]).map(t=>`<span class="tag">${t}</span>`).join('')}</div>
           <button class="play">Jouer</button>
@@ -106,6 +109,7 @@
       `URL : ${s_url.value || ''}`,
       `Description : ${s_desc.value || ''}`,
       `Genres : ${s_genres.value || ''}`,
+      `Pseudo : ${s_user.value || ''}`,
       '',
       '— Envoyé depuis la galerie de jeux'
     ].join('\n');
