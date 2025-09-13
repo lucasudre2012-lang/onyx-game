@@ -11,12 +11,57 @@
     <h1>🎮 Mes Jeux HTML</h1>
     <div class="actions">
       <input id="search" type="search" placeholder="Rechercher un jeu…" />
-      <select id="filter"><option value="all">Tous les genres</option></select>
+      <select id="filter">
+        <option value="all">Tous les genres</option>
+      </select>
       <button id="suggestBtn" class="suggest">Proposer un jeu</button>
-      <a href="https://discord.gg/A267MYeJ" target="_blank" class="discord-btn">💬 Discord</a>
     </div>
   </header>
-  <main><div id="grid" class="grid"></div></main>
+
+  <main>
+    <div id="grid" class="grid"></div>
+  </main>
+
+  <dialog id="player" class="player-modal">
+    <div class="player-bar">
+      <button id="closeBtn" aria-label="Fermer">✕</button>
+      <div class="player-title" id="playerTitle"></div>
+      <a id="openNewTab" class="open-btn" target="_blank" rel="noopener">Ouvrir dans un onglet ↗</a>
+    </div>
+    <iframe id="frame" title="Game frame" loading="lazy"></iframe>
+  </dialog>
+
+  <dialog id="suggestModal" class="suggest-modal">
+    <form method="dialog" class="panel">
+      <h2>Proposer un jeu</h2>
+      <p>Remplis ce formulaire pour demander l'ajout d'un jeu. Un e-mail sera préparé à <b>luca.sudre@outlook.com</b>.</p>
+      <label>Titre du jeu
+        <input id="s_title" type="text" placeholder="Ex: Super Puzzle" required />
+      </label>
+      <label>URL du jeu (HTML en ligne) ou lien de téléchargement
+        <input id="s_url" type="url" placeholder="https://..." required />
+      </label>
+      <label>Description courte
+        <textarea id="s_desc" rows="3" placeholder="Quelques lignes sur le jeu" required></textarea>
+      </label>
+      <label>Genres (séparés par des virgules)
+        <input id="s_genres" type="text" placeholder="Arcade, Action" />
+      </label>
+      <label>Pseudo (facultatif)
+        <input id="s_user" type="text" placeholder="Ton pseudo affiché sur la carte" />
+      </label>
+      <div class="row">
+        <button id="s_cancel" value="cancel" type="button">Annuler</button>
+        <button id="s_send" class="primary" type="submit">Préparer l'e-mail</button>
+      </div>
+      <p class="hint">Tu peux aussi écrire à <a href="mailto:luca.sudre@outlook.com">luca.sudre@outlook.com</a>.</p>
+    </form>
+  </dialog>
+
+  <footer class="site-footer">
+    <p>Pour marquer un jeu de la communauté, ajoute la clé <code>"user": "Pseudo"</code> dans <code>manifest.json</code>.</p>
+  </footer>
+
   <script src="script.js"></script>
 </body>
 </html>
